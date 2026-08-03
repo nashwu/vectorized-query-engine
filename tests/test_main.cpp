@@ -37,6 +37,12 @@ TEST(selection_and_batch_invariants) {
   Batch b({{1, Type::Int64, "x"}}, 4); b.columns[0].append_value(I(7)); b.finish(1);
   b.selection.clear(); b.selection.push(2); throws([&] { b.validate(); });
 }
+TEST(strings_and_buffer_reuse) {
+  Column c(Type::String); c.append_string("alpha"); c.append_null(); c.append_string(std::string("a\0b", 3)); c.append_string("");
+  CHECK(c.string_at(0) == "alpha"); CHECK(is_null(c.value(1))); CHECK(c.string_at(2).size() == 3);
+  Column d(Type::String); for (std::size_t i = 0; i < c.size(); ++i) d.append_from(c, i);
+  CHECK(d.value(2) == c.value(2)); const auto bytes = c.allocated_bytes(); c.reset(); CHECK(c.allocated_bytes() == bytes);
+}
 }
 int main() {
   int failures = 0;
