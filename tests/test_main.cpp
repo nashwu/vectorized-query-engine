@@ -1,4 +1,5 @@
 #include "vqe/vector.hpp"
+#include "vqe/hash.hpp"
 #include <bit>
 #include <cmath>
 #include <map>
@@ -42,6 +43,13 @@ TEST(strings_and_buffer_reuse) {
   CHECK(c.string_at(0) == "alpha"); CHECK(is_null(c.value(1))); CHECK(c.string_at(2).size() == 3);
   Column d(Type::String); for (std::size_t i = 0; i < c.size(); ++i) d.append_from(c, i);
   CHECK(d.value(2) == c.value(2)); const auto bytes = c.allocated_bytes(); c.reset(); CHECK(c.allocated_bytes() == bytes);
+}
+TEST(hash_collisions_and_resizing) {
+  HashIndex h;
+  for (std::size_t i = 0; i < 500; ++i) CHECK(h.find_or_insert(7, [i](auto r) { return i == r; }, [i] { return i; }).second);
+  CHECK(h.capacity() >= 1024); CHECK(h.size() == 500);
+  for (std::size_t i = 0; i < 500; ++i) CHECK(h.find(7, [i](auto r) { return r == i; }) == i);
+  CHECK(h.find(7, [](auto) { return false; }) == no_row);
 }
 }
 int main() {
