@@ -1,5 +1,6 @@
 #include "vqe/vector.hpp"
 #include "vqe/hash.hpp"
+#include "vqe/kernels.hpp"
 #include <bit>
 #include <cmath>
 #include <map>
