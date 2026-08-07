@@ -2,6 +2,7 @@
 #include "vqe/hash.hpp"
 #include "vqe/kernels.hpp"
 #include "vqe/expression.hpp"
+#include "vqe/operators.hpp"
 #include <bit>
 #include <cmath>
 #include <map>
@@ -22,6 +23,22 @@ struct Register { Register(std::string n, std::function<void()> f) { tests().emp
 #define CHECK(...) do { if (!(__VA_ARGS__)) throw std::runtime_error(std::string(__FILE__) + ":" + std::to_string(__LINE__) + " " #__VA_ARGS__); } while (false)
 template<class F> void throws(F f) { bool caught = false; try { f(); } catch (const std::exception&) { caught = true; } CHECK(caught); }
 Value I(std::int64_t x) { return x; }
+std::vector<std::vector<Value>> rows(Operator& op) {
+  std::vector<std::vector<Value>> result;
+  for (const auto& b : collect(op)) for (std::size_t i = 0; i < b.size(); ++i) {
+    std::vector<Value> row; for (const auto& c : b.columns) row.push_back(c.value(b.selection[i])); result.push_back(std::move(row));
+  }
+  return result;
+}
+std::shared_ptr<Table> table(const Schema& s, const std::vector<std::vector<Value>>& data, std::size_t group = 3) {
+  auto t = std::make_shared<Table>(s); Batch b(s, group);
+  for (const auto& r : data) {
+    for (std::size_t i = 0; i < s.size(); ++i) b.columns[i].append_value(r.at(i));
+    ++b.physical_size;
+    if (b.physical_size == group) { b.finish(b.physical_size); t->append(b); b.reset(); }
+  }
+  b.finish(b.physical_size); t->append(b); return t;
+}
 TEST(validity_boundaries_and_reuse) {
   Validity v;
   for (auto n : {0U, 1U, 63U, 64U, 65U, 2048U}) {
