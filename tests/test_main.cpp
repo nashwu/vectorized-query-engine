@@ -72,6 +72,18 @@ TEST(expressions_and_overflow) {
   Evaluator add(binary(ExprKind::Add, col(1), col(2)), s); CHECK(is_null(add.evaluate(b).value(3)));
   throws([&] { Evaluator e(binary(ExprKind::Add, col(1), lit(1.0)), s); });
 }
+TEST(boolean_three_valued_truth_tables) {
+  Schema s{{1, Type::Boolean, "a"}, {2, Type::Boolean, "b"}};
+  std::vector<Value> values{false, true, {}};
+  std::vector<std::vector<Value>> data; for (const auto& a : values) for (const auto& b : values) data.push_back({a, b});
+  auto t = table(s, data, 16); const auto& b = t->groups()[0];
+  Evaluator a(binary(ExprKind::And, col(1), col(2)), s), o(binary(ExprKind::Or, col(1), col(2)), s), n(unary(ExprKind::Not, col(1)), s);
+  const auto& av = a.evaluate(b); const auto& ov = o.evaluate(b); const auto& nv = n.evaluate(b);
+  std::vector<Value> expected_and{false, false, false, false, true, {}, false, {}, {}};
+  std::vector<Value> expected_or{false, true, {}, true, true, true, {}, true, {}};
+  for (std::size_t i = 0; i < 9; ++i) { CHECK(av.value(i) == expected_and[i]); CHECK(ov.value(i) == expected_or[i]); }
+  CHECK(is_null(nv.value(8)));
+}
 TEST(hash_collisions_and_resizing) {
   HashIndex h;
   for (std::size_t i = 0; i < 500; ++i) CHECK(h.find_or_insert(7, [i](auto r) { return i == r; }, [i] { return i; }).second);
