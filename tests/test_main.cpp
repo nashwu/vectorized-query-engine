@@ -63,6 +63,15 @@ TEST(strings_and_buffer_reuse) {
   Column d(Type::String); for (std::size_t i = 0; i < c.size(); ++i) d.append_from(c, i);
   CHECK(d.value(2) == c.value(2)); const auto bytes = c.allocated_bytes(); c.reset(); CHECK(c.allocated_bytes() == bytes);
 }
+TEST(expressions_and_overflow) {
+  Schema s{{1, Type::Int64, "x"}, {2, Type::Int64, "y"}};
+  auto t = table(s, {{I(7), I(2)}, {I(1), {}}, {I(9), I(0)}, {I(std::numeric_limits<std::int64_t>::max()), I(1)}} , 8);
+  auto b = t->groups()[0];
+  Evaluator div(binary(ExprKind::Divide, col(1), col(2)), s); auto& d = div.evaluate(b);
+  CHECK(d.value(0) == I(3)); CHECK(is_null(d.value(1))); CHECK(is_null(d.value(2)));
+  Evaluator add(binary(ExprKind::Add, col(1), col(2)), s); CHECK(is_null(add.evaluate(b).value(3)));
+  throws([&] { Evaluator e(binary(ExprKind::Add, col(1), lit(1.0)), s); });
+}
 TEST(hash_collisions_and_resizing) {
   HashIndex h;
   for (std::size_t i = 0; i < 500; ++i) CHECK(h.find_or_insert(7, [i](auto r) { return i == r; }, [i] { return i; }).second);
