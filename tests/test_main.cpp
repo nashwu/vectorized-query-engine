@@ -84,6 +84,18 @@ TEST(boolean_three_valued_truth_tables) {
   for (std::size_t i = 0; i < 9; ++i) { CHECK(av.value(i) == expected_and[i]); CHECK(ov.value(i) == expected_or[i]); }
   CHECK(is_null(nv.value(8)));
 }
+TEST(scan_filter_projection_and_sparse_input) {
+  Schema s{{1, Type::Int64, "x"}, {2, Type::String, "label"}};
+  auto t = table(s, {{I(1), std::string("a")}, {{}, std::string("null")}, {I(3), std::string("c")}, {I(7), std::string("g")}});
+  for (std::size_t batch : {1U, 2U, 3U, 16U}) {
+    OperatorPtr op = std::make_unique<Scan>(t, ExecutionOptions{batch});
+    op = std::make_unique<Filter>(std::move(op), binary(ExprKind::Greater, col(1), lit(I(1))));
+    op = std::make_unique<Filter>(std::move(op), binary(ExprKind::Less, col(1), lit(I(5))));
+    op = std::make_unique<Projection>(std::move(op), std::vector<NamedExpression>{{{3, Type::Int64, "twice"}, binary(ExprKind::Multiply, col(1), lit(I(2)))}, {{2, Type::String, "label"}, col(2)}});
+    CHECK(rows(*op) == std::vector<std::vector<Value>>{{I(6), std::string("c")}});
+    Batch end; CHECK(!op->next(end));
+  }
+}
 TEST(hash_collisions_and_resizing) {
   HashIndex h;
   for (std::size_t i = 0; i < 500; ++i) CHECK(h.find_or_insert(7, [i](auto r) { return i == r; }, [i] { return i; }).second);
