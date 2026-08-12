@@ -96,6 +96,11 @@ TEST(scan_filter_projection_and_sparse_input) {
     Batch end; CHECK(!op->next(end));
   }
 }
+TEST(empty_and_zero_column_batches) {
+  auto t = table({{1, Type::Int64, "x"}}, {}); Scan scan(t); CHECK(rows(scan).empty());
+  auto nonempty = table({{1, Type::Int64, "x"}}, {{I(1)}, {I(2)}});
+  Scan pruned(nonempty, std::vector<ColumnId>{}); CHECK(rows(pruned).size() == 2);
+}
 TEST(hash_collisions_and_resizing) {
   HashIndex h;
   for (std::size_t i = 0; i < 500; ++i) CHECK(h.find_or_insert(7, [i](auto r) { return i == r; }, [i] { return i; }).second);
