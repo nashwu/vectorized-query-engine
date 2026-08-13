@@ -120,6 +120,17 @@ TEST(grouped_aggregate_nulls_composite_and_empty) {
   CHECK(rows(global) == std::vector<std::vector<Value>>{{I(0), I(0), {}, {}, {}}});
   HashAggregate grouped(std::make_unique<Scan>(empty), {1}, aggs); CHECK(rows(grouped).empty());
 }
+TEST(aggregate_randomized_reference_and_overflow) {
+  Schema s{{1, Type::Int64, "k"}, {2, Type::Int64, "v"}};
+  std::mt19937 rng(42); std::vector<std::vector<Value>> data; std::map<std::int64_t, std::pair<std::int64_t, std::int64_t>> expected;
+  for (int i = 0; i < 10000; ++i) { auto k = static_cast<std::int64_t>(rng() % 1500), v = static_cast<std::int64_t>(rng() % 100); data.push_back({I(k), I(v)}); ++expected[k].first; expected[k].second += v; }
+  auto t = table(s, data, 127);
+  HashAggregate agg(std::make_unique<Scan>(t, ExecutionOptions{63}), {1}, {{{3, Type::Int64, "n"}, AggregateKind::Count, {}}, {{4, Type::Int64, "sum"}, AggregateKind::Sum, 2}});
+  auto actual = rows(agg); CHECK(actual.size() == expected.size());
+  for (const auto& r : actual) { const auto e = expected.at(std::get<std::int64_t>(r[0])); CHECK(r[1] == I(e.first)); CHECK(r[2] == I(e.second)); }
+  auto big = table(s, {{I(1), I(std::numeric_limits<std::int64_t>::max())}, {I(1), I(1)}});
+  HashAggregate overflow(std::make_unique<Scan>(big), {}, {{{4, Type::Int64, "sum"}, AggregateKind::Sum, 2}}); CHECK(is_null(rows(overflow)[0][0]));
+}
 }
 int main() {
   int failures = 0;
