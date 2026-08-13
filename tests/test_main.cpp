@@ -3,6 +3,7 @@
 #include "vqe/kernels.hpp"
 #include "vqe/expression.hpp"
 #include "vqe/operators.hpp"
+#include "vqe/blocking.hpp"
 #include <bit>
 #include <cmath>
 #include <map>
@@ -107,6 +108,17 @@ TEST(hash_collisions_and_resizing) {
   CHECK(h.capacity() >= 1024); CHECK(h.size() == 500);
   for (std::size_t i = 0; i < 500; ++i) CHECK(h.find(7, [i](auto r) { return r == i; }) == i);
   CHECK(h.find(7, [](auto) { return false; }) == no_row);
+}
+TEST(grouped_aggregate_nulls_composite_and_empty) {
+  Schema s{{1, Type::Int64, "key"}, {2, Type::String, "tag"}, {3, Type::Int64, "value"}};
+  auto t = table(s, {{I(1), std::string("a"), I(3)}, {I(1), std::string("a"), {}}, {{}, std::string("b"), I(8)}, {{}, std::string("b"), I(2)}, {I(1), std::string("b"), {}}});
+  std::vector<AggregateSpec> aggs{{{4, Type::Int64, "count"}, AggregateKind::Count, {}}, {{5, Type::Int64, "count_v"}, AggregateKind::Count, 3}, {{6, Type::Int64, "sum"}, AggregateKind::Sum, 3}, {{7, Type::Int64, "min"}, AggregateKind::Min, 3}, {{8, Type::Int64, "max"}, AggregateKind::Max, 3}};
+  HashAggregate agg(std::make_unique<Scan>(t, ExecutionOptions{2}), {1, 2}, aggs);
+  CHECK(rows(agg) == std::vector<std::vector<Value>>{{I(1), std::string("a"), I(2), I(1), I(3), I(3), I(3)}, {{}, std::string("b"), I(2), I(2), I(10), I(2), I(8)}, {I(1), std::string("b"), I(1), I(0), {}, {}, {}}});
+  auto empty = table(s, {});
+  HashAggregate global(std::make_unique<Scan>(empty), {}, aggs);
+  CHECK(rows(global) == std::vector<std::vector<Value>>{{I(0), I(0), {}, {}, {}}});
+  HashAggregate grouped(std::make_unique<Scan>(empty), {1}, aggs); CHECK(rows(grouped).empty());
 }
 }
 int main() {
