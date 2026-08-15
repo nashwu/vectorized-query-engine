@@ -131,6 +131,18 @@ TEST(aggregate_randomized_reference_and_overflow) {
   auto big = table(s, {{I(1), I(std::numeric_limits<std::int64_t>::max())}, {I(1), I(1)}});
   HashAggregate overflow(std::make_unique<Scan>(big), {}, {{{4, Type::Int64, "sum"}, AggregateKind::Sum, 2}}); CHECK(is_null(rows(overflow)[0][0]));
 }
+TEST(join_duplicates_nulls_and_both_build_sides) {
+  auto l = table({{1, Type::Int64, "k"}, {2, Type::String, "l"}}, {{I(2), std::string("a")}, {I(2), std::string("b")}, {{}, std::string("n")}, {I(3), std::string("c")}});
+  auto r = table({{3, Type::Int64, "k"}, {4, Type::Int64, "r"}}, {{I(2), I(10)}, {I(2), I(11)}, {I(2), I(12)}, {{}, I(99)}, {I(4), I(4)}});
+  std::vector<std::vector<Value>> expected;
+  for (const auto& name : {std::string("a"), std::string("b")}) for (int v : {10, 11, 12}) expected.push_back({I(2), name, I(2), I(v)});
+  std::sort(expected.begin(), expected.end());
+  for (bool br : {false, true}) for (std::size_t n : {1U, 2U, 8U}) {
+    HashJoin join(std::make_unique<Scan>(l, ExecutionOptions{n}), std::make_unique<Scan>(r, ExecutionOptions{n}), {1}, {3}, br);
+    auto actual = rows(join); std::sort(actual.begin(), actual.end()); CHECK(actual == expected);
+    Batch end; CHECK(!join.next(end));
+  }
+}
 }
 int main() {
   int failures = 0;

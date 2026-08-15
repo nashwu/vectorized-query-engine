@@ -8,6 +8,9 @@ namespace {
 Schema key_schema(const Schema& s, const std::vector<ColumnId>& keys) {
   Schema out; for (auto key : keys) out.push_back(s[column_index(s, key)]); validate_schema(out); return out;
 }
+Schema join_schema(const Schema& a, const Schema& b) {
+  auto out = a; out.insert(out.end(), b.begin(), b.end()); validate_schema(out); return out;
+}
 }
 Schema aggregate_schema(const Schema& input, const std::vector<ColumnId>& keys, const std::vector<AggregateSpec>& aggs) {
   auto out = key_schema(input, keys);
@@ -77,5 +80,60 @@ bool HashAggregate::next(Batch& out) {
 }
 std::size_t HashAggregate::allocated_bytes() const {
   return child_->allocated_bytes() + input_.allocated_bytes() + keys_.allocated_bytes() + index_.allocated_bytes() + states_.capacity() * sizeof(State);
+}
+HashJoin::HashJoin(OperatorPtr left, OperatorPtr right, std::vector<ColumnId> lk, std::vector<ColumnId> rk, bool br)
+  : Operator(join_schema(left->schema(), right->schema()), left->options()),
+    build_(br ? std::move(right) : std::move(left)), probe_(br ? std::move(left) : std::move(right)), build_right_(br),
+    store_(build_->schema()), build_batch_(build_->schema(), build_->options().batch_size), probe_batch_(probe_->schema(), probe_->options().batch_size) {
+  if (lk.empty() || lk.size() != rk.size()) throw std::invalid_argument("join requires equal nonempty key lists");
+  const auto& bk = br ? rk : lk; const auto& pk = br ? lk : rk;
+  for (std::size_t i = 0; i < bk.size(); ++i) {
+    build_keys_.push_back(column_index(build_->schema(), bk[i])); probe_keys_.push_back(column_index(probe_->schema(), pk[i]));
+    if (build_->schema()[build_keys_.back()].type != probe_->schema()[probe_keys_.back()].type) throw std::invalid_argument("join key type mismatch");
+  }
+}
+void HashJoin::build() {
+  built_ = true;
+  while (build_->next(build_batch_)) for (std::size_t j = 0; j < build_batch_.size(); ++j) {
+    const auto r = build_batch_.selection[j];
+    if (!joinable_row(build_batch_.columns, build_keys_, r)) continue;
+    const auto id = store_.size();
+    const auto [head, inserted] = index_.find_or_insert(hash_row(build_batch_.columns, build_keys_, r),
+      [&](auto h) { return store_.equal_key(h, build_batch_, build_keys_, build_keys_, r); }, [&] { return id; });
+    store_.append(build_batch_, r); next_.push_back(no_row); tails_.push_back(id);
+    if (!inserted) { next_[tails_[head]] = id; tails_[head] = id; }
+  }
+}
+bool HashJoin::load_probe() {
+  if (!probe_->next(probe_batch_)) return false;
+  // Hash and locate a batch of probe keys before expanding duplicate chains.
+  heads_.resize(probe_batch_.size()); probe_cursor_ = 0;
+  for (std::size_t j = 0; j < probe_batch_.size(); ++j) {
+    const auto r = probe_batch_.selection[j]; heads_[j] = no_row;
+    if (joinable_row(probe_batch_.columns, probe_keys_, r))
+      heads_[j] = index_.find(hash_row(probe_batch_.columns, probe_keys_, r),
+        [&](auto h) { return store_.equal_key(h, probe_batch_, probe_keys_, build_keys_, r); });
+  }
+  match_ = heads_[0]; return true;
+}
+bool HashJoin::next(Batch& out) {
+  prepare(out); if (!built_) build(); if (!store_.size()) return false;
+  std::size_t n = 0;
+  while (n < out.capacity) {
+    if (probe_cursor_ >= heads_.size()) { if (!load_probe()) break; }
+    if (match_ == no_row) { ++probe_cursor_; if (probe_cursor_ < heads_.size()) match_ = heads_[probe_cursor_]; continue; }
+    const auto probe_row = probe_batch_.selection[probe_cursor_];
+    const auto& first = build_right_ ? probe_batch_.columns : store_.columns;
+    const auto& second = build_right_ ? store_.columns : probe_batch_.columns;
+    const auto first_row = build_right_ ? probe_row : match_, second_row = build_right_ ? match_ : probe_row;
+    for (std::size_t c = 0; c < first.size(); ++c) out.columns[c].append_from(first[c], first_row);
+    for (std::size_t c = 0; c < second.size(); ++c) out.columns[first.size() + c].append_from(second[c], second_row);
+    match_ = next_[match_]; ++n;
+  }
+  out.finish(n); return n != 0;
+}
+std::size_t HashJoin::allocated_bytes() const {
+  return build_->allocated_bytes() + probe_->allocated_bytes() + store_.allocated_bytes() + index_.allocated_bytes() +
+    (next_.capacity() + tails_.capacity() + heads_.capacity()) * sizeof(std::size_t) + build_batch_.allocated_bytes() + probe_batch_.allocated_bytes();
 }
 }
