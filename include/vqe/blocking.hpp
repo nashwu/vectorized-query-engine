@@ -26,4 +26,22 @@ class HashAggregate final : public Operator {
   bool consumed_ = false;
   std::size_t cursor_ = 0;
 };
+class HashJoin final : public Operator {
+ public:
+  HashJoin(OperatorPtr left, OperatorPtr right, std::vector<ColumnId> left_keys,
+           std::vector<ColumnId> right_keys, bool build_right = true);
+  bool next(Batch&) override;
+  std::size_t allocated_bytes() const override;
+ private:
+  void build();
+  bool load_probe();
+  OperatorPtr build_, probe_;
+  bool build_right_, built_ = false;
+  std::vector<std::size_t> build_keys_, probe_keys_;
+  RowStore store_;
+  HashIndex index_;
+  std::vector<std::size_t> next_, tails_, heads_;
+  Batch build_batch_, probe_batch_;
+  std::size_t probe_cursor_ = 0, match_ = no_row;
+};
 }
