@@ -143,6 +143,18 @@ TEST(join_duplicates_nulls_and_both_build_sides) {
     Batch end; CHECK(!join.next(end));
   }
 }
+TEST(join_randomized_reference_composite) {
+  Schema ls{{1, Type::Int64, "k"}, {2, Type::Int64, "v"}}, rs{{3, Type::Int64, "k"}, {4, Type::Int64, "v"}};
+  std::mt19937 rng(71); std::vector<std::vector<Value>> a, b, expected;
+  for (int i = 0; i < 170; ++i) a.push_back({i % 13 ? I(rng() % 19) : Value{}, I(rng() % 5)});
+  for (int i = 0; i < 93; ++i) b.push_back({i % 7 ? I(rng() % 19) : Value{}, I(rng() % 5)});
+  for (const auto& x : a) for (const auto& y : b) if (!is_null(x[0]) && x == y) expected.push_back({x[0], x[1], y[0], y[1]});
+  std::sort(expected.begin(), expected.end());
+  for (bool br : {true, false}) {
+    HashJoin join(std::make_unique<Scan>(table(ls, a, 23), ExecutionOptions{17}), std::make_unique<Scan>(table(rs, b, 11), ExecutionOptions{7}), {1, 2}, {3, 4}, br);
+    auto actual = rows(join); std::sort(actual.begin(), actual.end()); CHECK(actual == expected);
+  }
+}
 }
 int main() {
   int failures = 0;
