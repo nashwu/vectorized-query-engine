@@ -136,4 +136,38 @@ std::size_t HashJoin::allocated_bytes() const {
   return build_->allocated_bytes() + probe_->allocated_bytes() + store_.allocated_bytes() + index_.allocated_bytes() +
     (next_.capacity() + tails_.capacity() + heads_.capacity()) * sizeof(std::size_t) + build_batch_.allocated_bytes() + probe_batch_.allocated_bytes();
 }
+Limit::Limit(OperatorPtr c, std::size_t n) : Operator(c->schema(), c->options()), child_(std::move(c)), remaining_(n) {}
+bool Limit::next(Batch& out) {
+  if (!remaining_) { prepare(out); return false; }
+  if (!child_->next(out)) return false;
+  out.selection.truncate(std::min(remaining_, out.size())); remaining_ -= out.size(); return out.size() != 0;
+}
+Sort::Sort(OperatorPtr c, std::vector<SortKey> keys)
+  : Operator(c->schema(), c->options()), child_(std::move(c)), store_(schema_), input_(schema_, options_.batch_size), keys_(std::move(keys)) {
+  for (const auto& k : keys_) key_indices_.push_back(column_index(schema_, k.column));
+}
+bool Sort::next(Batch& out) {
+  prepare(out);
+  if (!sorted_) {
+    while (child_->next(input_)) for (std::size_t i = 0; i < input_.size(); ++i) store_.append(input_, input_.selection[i]);
+    order_.resize(store_.size()); std::iota(order_.begin(), order_.end(), 0);
+    std::stable_sort(order_.begin(), order_.end(), [&](auto a, auto b) {
+      for (std::size_t k = 0; k < keys_.size(); ++k) {
+        const auto& c = store_.columns[key_indices_[k]]; const bool av = c.validity().valid(a), bv = c.validity().valid(b);
+        if (av != bv) return keys_[k].nulls_first ? !av : av;
+        const auto cmp = compare_cell(c, a, c, b); if (cmp) return keys_[k].ascending ? cmp < 0 : cmp > 0;
+      }
+      return false;
+    }); sorted_ = true;
+  }
+  std::size_t n = 0;
+  while (cursor_ < order_.size() && n < out.capacity) {
+    for (std::size_t c = 0; c < schema_.size(); ++c) out.columns[c].append_from(store_.columns[c], order_[cursor_]);
+    ++cursor_; ++n;
+  }
+  out.finish(n); return n != 0;
+}
+std::size_t Sort::allocated_bytes() const {
+  return child_->allocated_bytes() + input_.allocated_bytes() + store_.allocated_bytes() + order_.capacity() * sizeof(std::size_t);
+}
 }

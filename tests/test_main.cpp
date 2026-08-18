@@ -155,6 +155,13 @@ TEST(join_randomized_reference_composite) {
     auto actual = rows(join); std::sort(actual.begin(), actual.end()); CHECK(actual == expected);
   }
 }
+TEST(sort_limit_null_order_and_stability) {
+  auto t = table({{1, Type::Int64, "k"}, {2, Type::Int64, "v"}}, {{I(2), I(7)}, {{}, I(8)}, {I(1), I(9)}, {I(2), I(10)}});
+  OperatorPtr op = std::make_unique<Sort>(std::make_unique<Scan>(t, ExecutionOptions{2}), std::vector<SortKey>{{1, false, false}});
+  op = std::make_unique<Limit>(std::move(op), 3);
+  CHECK(rows(*op) == std::vector<std::vector<Value>>{{I(2), I(7)}, {I(2), I(10)}, {I(1), I(9)}});
+  Limit zero(std::make_unique<Scan>(t), 0); CHECK(rows(zero).empty());
+}
 }
 int main() {
   int failures = 0;

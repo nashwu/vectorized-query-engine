@@ -44,4 +44,23 @@ class HashJoin final : public Operator {
   Batch build_batch_, probe_batch_;
   std::size_t probe_cursor_ = 0, match_ = no_row;
 };
+class Limit final : public Operator {
+ public:
+  Limit(OperatorPtr child, std::size_t count);
+  bool next(Batch&) override;
+  std::size_t allocated_bytes() const override { return child_->allocated_bytes(); }
+ private:
+  OperatorPtr child_; std::size_t remaining_;
+};
+struct SortKey { ColumnId column; bool ascending = true; bool nulls_first = false; };
+class Sort final : public Operator {
+ public:
+  Sort(OperatorPtr, std::vector<SortKey>);
+  bool next(Batch&) override;
+  std::size_t allocated_bytes() const override;
+ private:
+  OperatorPtr child_; RowStore store_; Batch input_;
+  std::vector<SortKey> keys_; std::vector<std::size_t> key_indices_, order_;
+  bool sorted_ = false; std::size_t cursor_ = 0;
+};
 }
