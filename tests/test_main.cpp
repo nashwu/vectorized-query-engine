@@ -162,6 +162,17 @@ TEST(sort_limit_null_order_and_stability) {
   CHECK(rows(*op) == std::vector<std::vector<Value>>{{I(2), I(7)}, {I(2), I(10)}, {I(1), I(9)}});
   Limit zero(std::make_unique<Scan>(t), 0); CHECK(rows(zero).empty());
 }
+TEST(blocking_payload_exceeds_selection_index_range) {
+  auto t = std::make_shared<Table>(Schema{{1, Type::Int64, "k"}}); Batch b(t->schema(), 2048);
+  for (std::int64_t i = 0; i < 70000; ++i) {
+    b.columns[0].append(i); if (++b.physical_size == b.capacity) { b.finish(b.physical_size); t->append(b); b.reset(); }
+  }
+  b.finish(b.physical_size); t->append(b);
+  HashAggregate aggregate(std::make_unique<Scan>(t), {1}, {{{2, Type::Int64, "n"}, AggregateKind::Count, {}}});
+  auto actual = rows(aggregate); CHECK(actual.size() == 70000); CHECK(actual.back()[0] == I(69999)); CHECK(actual.back()[1] == I(1));
+  auto probe = table({{3, Type::Int64, "k"}}, {{I(69999)}, {I(65536)}, {I(1)}});
+  HashJoin join(std::make_unique<Scan>(t), std::make_unique<Scan>(probe), {1}, {3}, false); CHECK(rows(join).size() == 3);
+}
 }
 int main() {
   int failures = 0;
