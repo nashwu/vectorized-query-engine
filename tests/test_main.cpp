@@ -173,6 +173,16 @@ TEST(blocking_payload_exceeds_selection_index_range) {
   auto probe = table({{3, Type::Int64, "k"}}, {{I(69999)}, {I(65536)}, {I(1)}});
   HashJoin join(std::make_unique<Scan>(t), std::make_unique<Scan>(probe), {1}, {3}, false); CHECK(rows(join).size() == 3);
 }
+TEST(ieee_special_values_grouping_join_and_minmax) {
+  const auto nan = std::numeric_limits<double>::quiet_NaN();
+  auto t = table({{1, Type::Double, "x"}}, {{-0.0}, {0.0}, {nan}, {nan}, {1.0}});
+  HashAggregate grouped(std::make_unique<Scan>(t), {1}, {{{2, Type::Int64, "n"}, AggregateKind::Count, {}}});
+  auto groups = rows(grouped); CHECK(groups.size() == 3); CHECK(groups[0][1] == I(2)); CHECK(groups[1][1] == I(2));
+  HashAggregate minmax(std::make_unique<Scan>(t), {}, {{{2, Type::Double, "min"}, AggregateKind::Min, 1}, {{3, Type::Double, "max"}, AggregateKind::Max, 1}});
+  auto values = rows(minmax); CHECK(std::get<double>(values[0][0]) == 0.0); CHECK(std::isnan(std::get<double>(values[0][1])));
+  auto r = table({{2, Type::Double, "x"}}, {{0.0}, {nan}});
+  HashJoin join(std::make_unique<Scan>(t), std::make_unique<Scan>(r), {1}, {2}); CHECK(rows(join).size() == 2);
+}
 }
 int main() {
   int failures = 0;
