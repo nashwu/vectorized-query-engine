@@ -4,6 +4,7 @@
 #include "vqe/expression.hpp"
 #include "vqe/operators.hpp"
 #include "vqe/blocking.hpp"
+#include "vqe/plan.hpp"
 #include <bit>
 #include <cmath>
 #include <map>
