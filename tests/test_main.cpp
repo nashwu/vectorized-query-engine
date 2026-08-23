@@ -163,6 +163,14 @@ TEST(sort_limit_null_order_and_stability) {
   CHECK(rows(*op) == std::vector<std::vector<Value>>{{I(2), I(7)}, {I(2), I(10)}, {I(1), I(9)}});
   Limit zero(std::make_unique<Scan>(t), 0); CHECK(rows(zero).empty());
 }
+TEST(optimizer_folding_and_null_safe_simplification) {
+  auto folded = simplify_expression(binary(ExprKind::Add, lit(I(3)), lit(I(4)))); CHECK(folded->literal == I(7));
+  auto zero = simplify_expression(binary(ExprKind::Divide, lit(I(3)), lit(I(0)))); CHECK(is_null(zero->literal));
+  CHECK(simplify_expression(binary(ExprKind::And, lit(true), col(1)))->kind == ExprKind::Column);
+  CHECK(simplify_expression(binary(ExprKind::Or, lit(false), col(1)))->kind == ExprKind::Column);
+  CHECK(simplify_expression(binary(ExprKind::Equal, col(1), col(1)))->kind == ExprKind::Equal);
+  CHECK(simplify_expression(binary(ExprKind::Multiply, col(1), lit(I(0))))->kind == ExprKind::Multiply);
+}
 TEST(blocking_payload_exceeds_selection_index_range) {
   auto t = std::make_shared<Table>(Schema{{1, Type::Int64, "k"}}); Batch b(t->schema(), 2048);
   for (std::int64_t i = 0; i < 70000; ++i) {
