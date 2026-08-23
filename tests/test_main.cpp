@@ -171,6 +171,19 @@ TEST(optimizer_folding_and_null_safe_simplification) {
   CHECK(simplify_expression(binary(ExprKind::Equal, col(1), col(1)))->kind == ExprKind::Equal);
   CHECK(simplify_expression(binary(ExprKind::Multiply, col(1), lit(I(0))))->kind == ExprKind::Multiply);
 }
+TEST(optimizer_projection_pushdown_pruning_and_redundancy) {
+  auto t = table({{1, Type::Int64, "x"}, {2, Type::Int64, "unused"}}, {{I(1), I(99)}, {I(3), I(99)}, {{}, I(99)}});
+  auto p = logical::project(logical::scan(t), {{{7, Type::Int64, "alias"}, col(1)}});
+  auto pred = binary(ExprKind::Greater, col(7), lit(I(1)));
+  p = logical::filter(logical::filter(p, pred), binary(ExprKind::And, pred, lit(true)));
+  auto optimized = optimize(p); auto expected = execute(*lower(p)), actual = execute(*lower(optimized));
+  CHECK(rows(*actual) == rows(*expected)); CHECK(optimized->kind == LogicalKind::Projection);
+  CHECK(optimized->left->kind == LogicalKind::Filter); CHECK(optimized->left->left->kind == LogicalKind::Scan);
+  CHECK(optimized->left->left->columns == std::vector<ColumnId>{1});
+  CHECK(p->left->left->left->columns.size() == 2); // Input tree is unchanged.
+  auto identity = logical::project(logical::scan(t), {{{1, Type::Int64, "x"}, col(1)}, {{2, Type::Int64, "unused"}, col(2)}});
+  CHECK(optimize(identity)->kind == LogicalKind::Scan);
+}
 TEST(blocking_payload_exceeds_selection_index_range) {
   auto t = std::make_shared<Table>(Schema{{1, Type::Int64, "k"}}); Batch b(t->schema(), 2048);
   for (std::int64_t i = 0; i < 70000; ++i) {
