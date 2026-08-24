@@ -184,6 +184,20 @@ TEST(optimizer_projection_pushdown_pruning_and_redundancy) {
   auto identity = logical::project(logical::scan(t), {{{1, Type::Int64, "x"}, col(1)}, {{2, Type::Int64, "unused"}, col(2)}});
   CHECK(optimize(identity)->kind == LogicalKind::Scan);
 }
+TEST(optimizer_join_pushdown_build_choice_and_end_to_end) {
+  auto a = table({{1, Type::Int64, "k"}, {2, Type::Int64, "v"}}, {{I(1), I(1)}, {I(2), I(20)}, {I(2), I(30)}, {I(3), I(40)}});
+  auto b = table({{3, Type::Int64, "k"}}, {{I(2)}, {I(3)}});
+  auto joined = logical::join(logical::scan(a), logical::scan(b), {1}, {3});
+  CHECK(lower(joined)->build_right);
+  auto filtered = logical::filter(joined, binary(ExprKind::Less, col(2), lit(I(2))));
+  auto optimized = optimize(filtered); CHECK(optimized->kind == LogicalKind::Join); CHECK(optimized->left->kind == LogicalKind::Filter);
+  CHECK(!lower(optimized)->build_right);
+  auto p = logical::aggregate(logical::filter(joined, binary(ExprKind::Greater, col(2), lit(I(10)))), {3}, {{{5, Type::Int64, "sum"}, AggregateKind::Sum, 2}});
+  p = logical::limit(logical::sort(p, {{5, false, false}}), 1);
+  auto plain = execute(*lower(p), {1}), opt = execute(*lower(optimize(p)), {3});
+  CHECK(rows(*plain) == std::vector<std::vector<Value>>{{I(2), I(50)}});
+  CHECK(rows(*opt) == std::vector<std::vector<Value>>{{I(2), I(50)}});
+}
 TEST(blocking_payload_exceeds_selection_index_range) {
   auto t = std::make_shared<Table>(Schema{{1, Type::Int64, "k"}}); Batch b(t->schema(), 2048);
   for (std::int64_t i = 0; i < 70000; ++i) {
