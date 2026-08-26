@@ -198,6 +198,16 @@ TEST(optimizer_join_pushdown_build_choice_and_end_to_end) {
   CHECK(rows(*plain) == std::vector<std::vector<Value>>{{I(2), I(50)}});
   CHECK(rows(*opt) == std::vector<std::vector<Value>>{{I(2), I(50)}});
 }
+TEST(optimizer_respects_limit_and_global_aggregate_boundaries) {
+  auto t = table({{1, Type::Int64, "x"}}, {{I(1)}, {I(2)}, {I(3)}});
+  auto p = logical::filter(logical::limit(logical::scan(t), 1), binary(ExprKind::Greater, col(1), lit(I(1))));
+  auto opt = optimize(p); CHECK(opt->kind == LogicalKind::Filter && opt->left->kind == LogicalKind::Limit);
+  CHECK(rows(*execute(*lower(opt))).empty());
+  auto global = logical::filter(logical::aggregate(logical::scan(t), {}, {{{2, Type::Int64, "n"}, AggregateKind::Count, {}}}), lit(false));
+  CHECK(rows(*execute(*lower(optimize(global)))).empty());
+  auto grouped = logical::filter(logical::aggregate(logical::scan(t), {1}, {{{2, Type::Int64, "n"}, AggregateKind::Count, {}}}), binary(ExprKind::Greater, col(1), lit(I(1))));
+  CHECK(optimize(grouped)->kind == LogicalKind::Aggregate);
+}
 TEST(blocking_payload_exceeds_selection_index_range) {
   auto t = std::make_shared<Table>(Schema{{1, Type::Int64, "k"}}); Batch b(t->schema(), 2048);
   for (std::int64_t i = 0; i < 70000; ++i) {
