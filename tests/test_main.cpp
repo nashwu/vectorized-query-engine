@@ -229,6 +229,23 @@ TEST(ieee_special_values_grouping_join_and_minmax) {
   auto r = table({{2, Type::Double, "x"}}, {{0.0}, {nan}});
   HashJoin join(std::make_unique<Scan>(t), std::make_unique<Scan>(r), {1}, {2}); CHECK(rows(join).size() == 2);
 }
+TEST(optimizer_randomized_scalar_reference) {
+  std::mt19937 random(9911);
+  for (int trial = 0; trial < 50; ++trial) {
+    std::vector<std::vector<Value>> data, expected;
+    const auto lo = static_cast<std::int64_t>(random() % 10), hi = 10 + static_cast<std::int64_t>(random() % 10);
+    for (int i = 0; i < 150; ++i) {
+      Value a = i % 7 ? I(random() % 30) : Value{}, b = i % 11 ? I(random() % 30) : Value{}; data.push_back({a, b});
+      if (!is_null(a) && !is_null(b) && std::get<std::int64_t>(a) > lo && std::get<std::int64_t>(b) < hi) expected.push_back({a});
+    }
+    std::sort(expected.begin(), expected.end()); if (expected.size() > 9) expected.resize(9);
+    auto t = table({{1, Type::Int64, "a"}, {2, Type::Int64, "b"}}, data, 17);
+    auto predicate = binary(ExprKind::And, binary(ExprKind::Greater, col(1), lit(lo)), binary(ExprKind::Less, col(2), lit(hi)));
+    auto p = logical::limit(logical::sort(logical::project(logical::filter(logical::filter(logical::scan(t), predicate), predicate), {{{3, Type::Int64, "alias"}, col(1)}}), {{3}}), 9);
+    auto op = execute(*lower(optimize(p)), {static_cast<std::size_t>(1 + random() % 65)});
+    CHECK(rows(*op) == expected);
+  }
+}
 }
 int main() {
   int failures = 0;
