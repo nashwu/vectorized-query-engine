@@ -163,6 +163,18 @@ TEST(sort_limit_null_order_and_stability) {
   CHECK(rows(*op) == std::vector<std::vector<Value>>{{I(2), I(7)}, {I(2), I(10)}, {I(1), I(9)}});
   Limit zero(std::make_unique<Scan>(t), 0); CHECK(rows(zero).empty());
 }
+TEST(storage_statistics_and_pruning) {
+  Schema s{{1, Type::Int64, "x"}, {2, Type::String, "text"}};
+  auto t = table(s, {{I(1), std::string("a")}, {I(2), std::string("b")}, {I(20), std::string("c")}, {I(21), std::string("d")}, {{}, std::string("e")}, {{}, std::string("f")}}, 2);
+  auto pred = binary(ExprKind::Less, col(1), lit(I(5)));
+  Scan scan(t, {1}, ExecutionOptions{1}, pred); CHECK(rows(scan).size() == 2);
+  CHECK(scan.groups_read() == 1); CHECK(scan.groups_skipped() == 2);
+  CHECK(t->statistics()[0].nulls == 2); CHECK(t->statistics()[0].minimum == I(1));
+  CHECK(t->statistics()[0].maximum == I(21)); CHECK(t->statistics()[0].approximate_distinct() > 3.0);
+  CHECK(!may_match(binary(ExprKind::Greater, lit(I(0)), col(1)), s, t->statistics()));
+  CHECK(may_match(unary(ExprKind::IsNull, col(1)), s, t->statistics()));
+  CHECK(!may_match(binary(ExprKind::Equal, col(1), null_literal(Type::Int64)), s, t->statistics()));
+}
 TEST(optimizer_folding_and_null_safe_simplification) {
   auto folded = simplify_expression(binary(ExprKind::Add, lit(I(3)), lit(I(4)))); CHECK(folded->literal == I(7));
   auto zero = simplify_expression(binary(ExprKind::Divide, lit(I(3)), lit(I(0)))); CHECK(is_null(zero->literal));
