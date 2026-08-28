@@ -241,6 +241,27 @@ TEST(ieee_special_values_grouping_join_and_minmax) {
   auto r = table({{2, Type::Double, "x"}}, {{0.0}, {nan}});
   HashJoin join(std::make_unique<Scan>(t), std::make_unique<Scan>(r), {1}, {2}); CHECK(rows(join).size() == 2);
 }
+TEST(pruning_has_no_false_negatives_randomized) {
+  std::mt19937 random(991); Schema s{{1, Type::Int64, "integer"}, {2, Type::Double, "floating"}, {3, Type::String, "string"}};
+  for (int trial = 0; trial < 80; ++trial) {
+    Batch b(s, 127);
+    for (int i = 0; i < 127; ++i) {
+      const auto x = static_cast<std::int64_t>(random() % 40) - 20;
+      b.columns[0].append(x, random() % 5 != 0);
+      b.columns[1].append(i % 13 ? static_cast<double>(x) : std::nan(""), random() % 5 != 0);
+      b.columns[2].append_string(std::to_string(x), random() % 5 != 0);
+    }
+    b.finish(127); const auto stats = analyze(b);
+    for (auto kind : {ExprKind::Equal, ExprKind::NotEqual, ExprKind::Less, ExprKind::LessEqual, ExprKind::Greater, ExprKind::GreaterEqual}) {
+      const auto value = static_cast<std::int64_t>(random() % 100) - 50;
+      for (const auto& p : {binary(kind, col(1), lit(value)), binary(kind, lit(value), col(1)), binary(kind, col(2), lit(static_cast<double>(value))), binary(kind, col(3), lit(std::to_string(value)))}) {
+        Evaluator evaluator(p, s); const auto& result = evaluator.evaluate(b); bool any = false;
+        for (std::size_t i = 0; i < b.size(); ++i) any |= result.validity().valid(i) && result.data<std::uint8_t>()[i];
+        CHECK(may_match(p, s, stats) || !any);
+      }
+    }
+  }
+}
 TEST(optimizer_randomized_scalar_reference) {
   std::mt19937 random(9911);
   for (int trial = 0; trial < 50; ++trial) {
