@@ -5,6 +5,7 @@
 #include "vqe/operators.hpp"
 #include "vqe/blocking.hpp"
 #include "vqe/plan.hpp"
+#include "vqe/workloads.hpp"
 #include <bit>
 #include <cmath>
 #include <map>
