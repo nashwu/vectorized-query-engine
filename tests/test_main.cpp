@@ -221,6 +221,24 @@ TEST(optimizer_respects_limit_and_global_aggregate_boundaries) {
   auto grouped = logical::filter(logical::aggregate(logical::scan(t), {1}, {{{2, Type::Int64, "n"}, AggregateKind::Count, {}}}), binary(ExprKind::Greater, col(1), lit(I(1))));
   CHECK(optimize(grouped)->kind == LogicalKind::Aggregate);
 }
+TEST(analytical_workloads_optimized_and_reference) {
+  auto data = workloads::generate(5000, 127);
+  for (const auto& p : {workloads::q1(data), workloads::q3(data), workloads::q6(data)}) {
+    auto plain = execute(*lower(p), {31, KernelMode::Scalar}), opt = execute(*lower(optimize(p)), {257, KernelMode::Auto});
+    auto a = rows(*plain), b = rows(*opt); CHECK(a.size() == b.size());
+    for (std::size_t r = 0; r < a.size(); ++r) for (std::size_t c = 0; c < a[r].size(); ++c) {
+      if (std::holds_alternative<double>(a[r][c])) CHECK(std::abs(std::get<double>(a[r][c]) - std::get<double>(b[r][c])) < 1e-7);
+      else CHECK(a[r][c] == b[r][c]);
+    }
+  }
+  double revenue = 0;
+  for (std::size_t i = 0; i < 5000; ++i) {
+    const auto day = 9000 + i % 365, qty = 1 + i % 50; const auto disc = static_cast<double>(i % 11) / 100.0;
+    if (day >= 9100 && day < 9200 && disc >= 0.05 && disc <= 0.07 && qty < 24) revenue += (10.0 + static_cast<double>((i * 17) % 10000) / 10.0) * disc;
+  }
+  auto actual = rows(*execute(*lower(optimize(workloads::q6(data))), {63}));
+  CHECK(actual.size() == 1); CHECK(std::abs(std::get<double>(actual[0][0]) - revenue) < 1e-9);
+}
 TEST(blocking_payload_exceeds_selection_index_range) {
   auto t = std::make_shared<Table>(Schema{{1, Type::Int64, "k"}}); Batch b(t->schema(), 2048);
   for (std::int64_t i = 0; i < 70000; ++i) {
