@@ -1,5 +1,18 @@
 # Architecture and tradeoffs
 
+```mermaid
+flowchart TD
+  Q[Constructed query: immutable expressions] --> L[Logical tree]
+  L --> O[Rule optimizer and metadata estimates]
+  O --> P[Physical tree: strategies and build sides]
+  P --> E[Factory creates execution operators]
+  E --> B[Pull batches: next Batch]
+  B --> M[In-memory row groups]
+  B --> A[Arrow batched Parquet reader]
+  M --> S[Column vectors, validity, selection]
+  A --> S
+```
+
 ## Batch contract
 
 `Batch::physical_size` counts initialized rows in every column. `selection.size()`
@@ -34,7 +47,8 @@ needed for this implementation.
 Expressions are compiled to postorder nodes with bound column positions and
 reusable vectors. Each node evaluates over a selection, rather than interpreting
 an AST for each row. Scalar NULL-aware loops are the general path. Dense,
-all-valid int64 `< constant` and double addition use isolated scalar kernels.
+all-valid int64 `< constant` and double addition use isolated dispatchable
+kernels. No query-wide `-mavx2` flag is required.
 
 ## Hashing and blocking operators
 
@@ -64,6 +78,33 @@ Sort materializes column payload, stable-sorts an array of row IDs, then emits
 batches. LIMIT is streaming; a LIMIT above sort still requires a full sort.
 All blocking state is in memory: no spilling, memory quota, parallel partitioned
 join, or external sorting. Allocation failure propagates as an exception.
+
+## Planning and optimization
+
+Logical nodes describe relational operations; physical nodes describe selected
+strategies. Execution operators are created only after optimization and
+lowering. Expressions are immutable; optimization deep-copies the logical tree.
+Globally unique column IDs allow schemas to shrink without rebinding expressions
+by fragile old positions. Self-joins require distinct column IDs for each input.
+
+Rules fold constant expressions using the actual evaluator; simplify boolean
+identities and double negation; deduplicate filters; remove identity projections;
+push side-local predicates through inner joins, grouping-key predicates through
+aggregation, predicates through sort and column-only projections; and prune
+unused columns and aggregates. LIMIT and global aggregation are semantic
+barriers. Computed projections are conservatively kept as pushdown barriers.
+`x=x` and `x*0` are deliberately not simplified, because of NULLs, NaNs and
+overflow. Exact filters remain above scans even when metadata can skip groups.
+
+Statistics include exact row/null counts and min/max, plus a 1,024-bit linear
+counting sketch for in-memory distinct-count estimates. Saturated sketches fall
+back to non-NULL row counts; Parquet cardinality also uses that fallback.
+Selectivity estimates assume uniform numeric ranges or equal key frequencies.
+Filters run in estimated selectivity order. Join lowering chooses the smaller
+estimated input by row count; it does not estimate payload bytes, search join
+orders, or implement a calibrated cost model. Join output cardinality uses a
+crude max-input heuristic. Skew and correlated columns can make these estimates
+poor, without affecting correctness.
 
 ## Numeric and NULL semantics
 
