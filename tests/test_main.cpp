@@ -298,6 +298,12 @@ TEST(optimizer_randomized_scalar_reference) {
     CHECK(rows(*op) == expected);
   }
 }
+TEST(reusing_output_batch_preserves_schema_aliases) {
+  auto first = table({{1, Type::Int64, "old_name"}}, {{I(1)}});
+  auto second = table({{1, Type::Int64, "new_name"}}, {{I(2)}});
+  Batch output; Scan a(first), b(second); CHECK(a.next(output)); CHECK(b.next(output));
+  CHECK(output.schema[0].name == "new_name"); CHECK(output.columns[0].value(0) == I(2));
+}
 }
 int main() {
   int failures = 0;
