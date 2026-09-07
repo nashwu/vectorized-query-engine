@@ -221,6 +221,20 @@ TEST(optimizer_respects_limit_and_global_aggregate_boundaries) {
   auto grouped = logical::filter(logical::aggregate(logical::scan(t), {1}, {{{2, Type::Int64, "n"}, AggregateKind::Count, {}}}), binary(ExprKind::Greater, col(1), lit(I(1))));
   CHECK(optimize(grouped)->kind == LogicalKind::Aggregate);
 }
+TEST(simd_scalar_differential_tails_and_unaligned_data) {
+  std::mt19937_64 random(81);
+  for (std::size_t n : {0U, 1U, 2U, 3U, 4U, 7U, 63U, 64U, 65U, 2049U}) {
+    std::vector<std::int64_t> in(n + 1); std::vector<std::uint8_t> a(n + 1, 77), b(n + 1, 77);
+    std::vector<double> x(n + 1), y(n + 1), da(n + 1), db(n + 1);
+    for (std::size_t i = 0; i <= n; ++i) { in[i] = std::bit_cast<std::int64_t>(random()); x[i] = static_cast<double>(in[i]); y[i] = static_cast<double>(random()); }
+    for (auto c : {std::numeric_limits<std::int64_t>::min(), std::int64_t{0}, std::numeric_limits<std::int64_t>::max()}) {
+      less_i64_constant(in.data() + 1, c, a.data(), n, KernelMode::Scalar);
+      less_i64_constant(in.data() + 1, c, b.data(), n, KernelMode::Auto); CHECK(a == b); CHECK(a[n] == 77);
+    }
+    add_f64(x.data() + 1, y.data() + 1, da.data(), n, KernelMode::Scalar);
+    add_f64(x.data() + 1, y.data() + 1, db.data(), n, KernelMode::Auto); CHECK(da == db);
+  }
+}
 TEST(analytical_workloads_optimized_and_reference) {
   auto data = workloads::generate(5000, 127);
   for (const auto& p : {workloads::q1(data), workloads::q3(data), workloads::q6(data)}) {
