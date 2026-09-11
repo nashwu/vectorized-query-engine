@@ -1,5 +1,6 @@
 #include "vqe/vector.hpp"
 #include <algorithm>
+#include <bit>
 #include <limits>
 #include <sstream>
 #include <unordered_set>
@@ -46,6 +47,23 @@ void Validity::append(bool v) {
   if (size_ % 64 == 0) bits_.push_back(0);
   const auto row = size_++;
   ++null_count_; set(row, v);
+}
+void Validity::append_range(const Validity& source, std::size_t start, std::size_t count) {
+  if (&source == this || start > source.size_ || count > source.size_ - start) throw std::invalid_argument("invalid validity range");
+  const auto end = size_ + count; bits_.resize((end + 63) / 64, 0);
+  while (count) {
+    const auto shift = size_ % 64, take = std::min(count, 64 - shift);
+    const auto mask = take == 64 ? ~std::uint64_t{0} : (std::uint64_t{1} << take) - 1;
+    std::uint64_t value = mask;
+    if (!source.all_valid()) {
+      const auto source_shift = start % 64;
+      value = source.bits_[start / 64] >> source_shift;
+      if (source_shift && take > 64 - source_shift) value |= source.bits_[start / 64 + 1] << (64 - source_shift);
+      value &= mask; null_count_ += take - static_cast<std::size_t>(std::popcount(value));
+    }
+    bits_[size_ / 64] = (bits_[size_ / 64] & ~(mask << shift)) | (value << shift);
+    size_ += take; start += take; count -= take;
+  }
 }
 void Selection::identity(std::size_t n) {
   if (n > max_batch_size) throw std::length_error("batch exceeds uint16 selection range");

@@ -29,6 +29,7 @@ class Validity {
   bool valid(std::size_t row) const { assert(row < size_); return (bits_[row / 64] >> (row % 64)) & 1U; }
   void set(std::size_t row, bool valid);
   void append(bool valid);
+  void append_range(const Validity&, std::size_t start, std::size_t count);
   std::size_t size() const { return size_; }
   bool all_valid() const { return null_count_ == 0; }
   std::size_t null_count() const { return null_count_; }
