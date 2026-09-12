@@ -142,6 +142,22 @@ void Column::append_from(const Column& c, std::size_t row) {
     case Type::String: append_string(c.string_at(row), valid); break;
   }
 }
+void Column::append_range(const Column& source, std::size_t start, std::size_t count) {
+  if (&source == this || type_ != source.type_ || start > source.size() || count > source.size() - start) throw std::invalid_argument("invalid column range");
+  std::visit([&](auto& dest) {
+    using T = std::decay_t<decltype(dest)>; const auto& src = std::get<T>(source.data_);
+    if constexpr (std::is_same_v<T, StringBuffer>) {
+      const auto base = dest.bytes.size(); const auto first = src.offsets[start], last = src.offsets[start + count];
+      if (last - first > std::numeric_limits<std::uint32_t>::max() - base) throw std::length_error("string arena exceeds 4 GiB");
+      dest.bytes.insert(dest.bytes.end(), src.bytes.begin() + first, src.bytes.begin() + last);
+      for (std::size_t i = 1; i <= count; ++i) dest.offsets.push_back(static_cast<std::uint32_t>(base + src.offsets[start + i] - first));
+    } else {
+      const auto first = src.begin() + static_cast<std::ptrdiff_t>(start);
+      dest.insert(dest.end(), first, first + static_cast<std::ptrdiff_t>(count));
+    }
+  }, data_);
+  validity_.append_range(source.validity_, start, count);
+}
 Value Column::value(std::size_t r) const {
   if (!validity_.valid(r)) return {};
   switch (type_) {

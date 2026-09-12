@@ -76,6 +76,7 @@ class Column {
   void append_value(const Value&);
   void append_null();
   void append_from(const Column&, std::size_t row);
+  void append_range(const Column&, std::size_t start, std::size_t count);
   Value value(std::size_t row) const;
   std::size_t allocated_bytes() const;
  private:
