@@ -44,10 +44,9 @@ bool Scan::next(Batch& out) {
       ++groups_read_;
     }
     const auto& b = table_->groups()[group_];
-    while (row_ < b.physical_size && n < out.capacity) {
-      for (std::size_t c = 0; c < indices_.size(); ++c) out.columns[c].append_from(b.columns[indices_[c]], row_);
-      ++row_; ++n;
-    }
+    const auto count = std::min(b.physical_size - row_, out.capacity - n);
+    for (std::size_t c = 0; c < indices_.size(); ++c) out.columns[c].append_range(b.columns[indices_[c]], row_, count);
+    row_ += count; n += count;
     if (row_ == b.physical_size) { row_ = 0; ++group_; }
   }
   out.finish(n); return n != 0;
