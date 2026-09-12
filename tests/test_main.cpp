@@ -1,8 +1,3 @@
-#include "vqe/vector.hpp"
-#include "vqe/hash.hpp"
-#include "vqe/kernels.hpp"
-#include "vqe/expression.hpp"
-#include "vqe/operators.hpp"
 #include "vqe/blocking.hpp"
 #include "vqe/plan.hpp"
 #include "vqe/workloads.hpp"
@@ -252,6 +247,17 @@ TEST(analytical_workloads_optimized_and_reference) {
   }
   auto actual = rows(*execute(*lower(optimize(workloads::q6(data))), {63}));
   CHECK(actual.size() == 1); CHECK(std::abs(std::get<double>(actual[0][0]) - revenue) < 1e-9);
+}
+TEST(bulk_copy_validity_word_boundaries_and_strings) {
+  Column source(Type::String); Validity bits;
+  for (std::size_t i = 0; i < 300; ++i) { source.append_string(std::to_string(i), i % 7 != 0); bits.append(i % 7 != 0); }
+  for (std::size_t prefix : {0U, 1U, 31U, 63U, 64U, 65U}) for (std::size_t start : {0U, 1U, 63U, 64U, 129U}) for (std::size_t n : {0U, 1U, 63U, 64U, 65U, 127U}) {
+    Column dest(Type::String); Validity v; for (std::size_t i = 0; i < prefix; ++i) { dest.append_null(); v.append(false); }
+    dest.append_range(source, start, n); v.append_range(bits, start, n);
+    CHECK(v.size() == prefix + n); std::size_t nulls = prefix;
+    for (std::size_t i = 0; i < n; ++i) { CHECK(v.valid(prefix + i) == bits.valid(start + i)); CHECK(dest.value(prefix + i) == source.value(start + i)); nulls += !bits.valid(start + i); }
+    CHECK(v.null_count() == nulls);
+  }
 }
 TEST(blocking_payload_exceeds_selection_index_range) {
   auto t = std::make_shared<Table>(Schema{{1, Type::Int64, "k"}}); Batch b(t->schema(), 2048);
