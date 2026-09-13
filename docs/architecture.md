@@ -106,6 +106,24 @@ orders, or implement a calibrated cost model. Join output cardinality uses a
 crude max-input heuristic. Skew and correlated columns can make these estimates
 poor, without affecting correctness.
 
+## Storage
+
+`Source` separates immutable metadata from scan cursors. MemorySource and
+ParquetSource share the planner interface. In-memory batches are row groups with
+min/max metadata. The Parquet source reads the footer, selects candidate row
+groups, requests only required physical columns from Arrow, then converts
+bounded Arrow record batches into owned engine columns. It supports flat bool,
+int64, double and UTF-8 columns. Unsupported nested/logical/numeric types fail
+explicitly. Input files must remain unchanged between metadata construction and
+scan execution.
+
+Missing bounds retain groups. Missing NULL counts retain groups for IS NULL.
+Parquet bounds cannot prove absence of NaN, so `!=` pruning for double columns
+is conservative. Metadata pruning may admit false positives but must never
+drop qualifying rows. A zero-column scan obtains cardinality from metadata
+without decoding value columns. There is no custom Parquet parser, page-index
+pruning, asynchronous prefetch, dictionary-preserving execution or scan cache.
+
 ## Numeric and NULL semantics
 
 Boolean logic uses SQL's three truth values. WHERE retains only valid true.
@@ -123,3 +141,20 @@ input order and is not compensated, so different valid join orders can change
 floating-point rounding. Strings use bytewise lexicographic comparisons with no
 locale or collation processing.
 
+## Measurements and alternatives
+
+`allocated_bytes()` reports retained capacities for data, validity, selection,
+hash buckets, numeric state, row links and execution scratch. It includes child
+operators recursively and excludes shared input tables. The benchmark reports
+input-table column buffers separately and includes the output batch in its
+operator-buffer counter. These are concrete buffer measurements, not full heap
+accounting: schema strings, expression objects, STL control objects, allocator
+metadata and sort's temporary workspace are not included. Parquet scans use an
+Arrow proxy memory pool for their current decoder allocation count.
+
+std::unordered_map per group was rejected in favor of contiguous buckets and
+states. Per-row strings were rejected in favor of offset arenas. A full SQL
+frontend, an elaborate inheritance hierarchy for expressions, and a homemade
+Parquet parser would distract from execution. Prefetching, SIMD hash probing,
+Top-N, late materialization and parallel execution remain future experiments,
+not existing features.
