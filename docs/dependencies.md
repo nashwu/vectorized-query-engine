@@ -33,5 +33,4 @@ cmake --build .deps/benchmark-build -j
 cmake --install .deps/benchmark-build
 ```
 
-Core builds do not need any of these steps. The project has no remote, commit,
-release, package upload or publication workflow.
+Core builds do not need any of these steps. Optional dependencies are installed locally when needed.

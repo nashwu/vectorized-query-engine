@@ -1,0 +1,46 @@
+Recorded 2026-09-16; all work local and uncommitted.
+CPU: Apple M3 Pro, 12 logical CPUs, 36 GiB RAM
+OS: macOS 26.6.2 (25G83), Darwin 25.6.0 ARM64
+Compiler: Apple clang 21.0.0 (clang-2100.1.1.101)
+CMake: 4.1.2; generator: Unix Makefiles
+C++ flags: -O3 -DNDEBUG -std=c++20 -arch arm64
+Warnings: -Wall -Wextra -Wpedantic -Wconversion -Wshadow
+Scalar kernel flags: -fno-vectorize -fno-slp-vectorize
+VQE_NATIVE=OFF; VQE_PARQUET=ON; VQE_GOOGLE_BENCHMARK=ON
+Arrow/Parquet: 21.0.0 (PyArrow wheel, CPython 3.13 macOS ARM64)
+Google Benchmark: v1.9.4, Release
+Benchmark: --benchmark_min_time=0.05s --benchmark_repetitions=3
+
+SHA256 of measured source/build inputs:
+ea726cf21dd469b8f4f4cf625c6b794f02a2df99c2bed90e96f760c87b4a5c88  CMakeLists.txt
+88d87d1eff32fe5a823c7aea4226b9a29bb060c27951e5acf72accdb6f402ed8  benchmarks/engine_bench.cpp
+4aebc626780b16e511e9947e9344e2eb87e96551c68de21b4636c86f9feb95a1  cmake/ArrowLocal.cmake
+645c3c48bbe943f6b935b4186f30064ce2314cab3db2c8f9c7baac94c7b3a7b2  include/vqe/blocking.hpp
+eabf2ae863a077faa877a00c5df7335871e452d7f9a7b74fe26322495057f7f1  include/vqe/expression.hpp
+1ba4e4d69f574884739fb0c522667b8ab80e15cc00974aa8f31b36de7fc1deae  include/vqe/hash.hpp
+f5fdc31212197b6db436948a8bf482626ee34483f9164d68f086ec42b6b0e024  include/vqe/kernels.hpp
+f2134bda2d27ac4b767e4b14d167f27c8b5bc8c5a75260c7e7fc2f7c89f85d81  include/vqe/operators.hpp
+cb16a3bacffa51a135550ca64b1636429127f3fa1507f4bbf5bde23710381f96  include/vqe/parquet.hpp
+524ec259cd4fba36cc4efcb61562fc0b16f8fefc1d923e19972bebcece65d1d4  include/vqe/plan.hpp
+42bb062061061bbf9e94f3a3fc4b19dee9781945d05a510fed9dae817d23ae4b  include/vqe/statistics.hpp
+7f9ef1228649ca7c38bab379d34d491a0085db6e43ca6826367bbfb3e83b09f3  include/vqe/storage.hpp
+a730c6c69e789d611ade762e7068f56c32719bea6965032fc9b1d0c59c802be8  include/vqe/vector.hpp
+07f927cc9e86206219eec0d0bce13a6344a065203d6dbc3ec9eeebe9f4a250bd  include/vqe/workloads.hpp
+63bb37b3fa8083796d3da1bcabedde8e1703a4d5ddf814353a641be57e886d9b  src/blocking.cpp
+e829bb64658cd96519a8d7f1bf471f6da438fb4d8e597c8284cdfa2b22467268  src/expression.cpp
+5d6f0885648347843ca5c6f78404e49a90e498ab37f2ab0ecf5b020b042d9ad2  src/hash.cpp
+a3a37a85fd812aef541f0e3c99d11fe0e5d1b6fb4a806e37f216a627b8565951  src/kernels.cpp
+aa6f1c88925fe6d1ff9c0000f60db1de85380f3c925bafd83bfba73570730b3f  src/kernels_scalar.cpp
+f49c2a74a52596954a4afb81eb287489c47353090c4c5feb675e46eab73a4aef  src/operators.cpp
+99f4bb4f17bcfdfd1b21aa22d6c569bde03d36afa4ae24f204d02cf88926b3c7  src/parquet.cpp
+e24c7fc0e4e64036b5158a2a7d428c7a0df0d8a502319b250821d66a49d0569b  src/plan.cpp
+ca39d5aad4c4a73c497f5cca94a5397b39b1c98aff3f56acf24e7de5791ed873  src/statistics.cpp
+d71cee4230e6d44fe5310783356c3e854e9a6a77a8f067ef6bbaf88825de3e4e  src/vector.cpp
+91c1285b17750ae4fd32f0f3f532e0e0c50a47f04e853c378953fedabf9b9137  src/workloads.cpp
+
+SHA256 of Google Benchmark upstream archive:
+b334658edd35efcf06a99d9be21e4e93e092bd5f95074c1673d5c8705d95c104  benchmark-1.9.4.tar.gz
+
+The baseline uses the same inputs with scan-bulk.patch reversed.
+Tests and source validation: docs/validation.md
+No Linux hardware performance counters collected.

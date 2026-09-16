@@ -1,0 +1,112 @@
+Unable to determine clock rate from sysctl: hw.cpufrequency: No such file or directory
+This does not affect benchmark measurements, only the metadata output.
+***WARNING*** Failed to set thread affinity. Estimated CPU frequency may be incorrect.
+2026-09-16T13:57:14-05:00
+Running ./.deps/baseline-build/vqe_bench
+Run on (12 X 24 MHz CPU s)
+CPU Caches:
+  L1 Data 64 KiB
+  L1 Instruction 128 KiB
+  L2 Unified 4096 KiB (x12)
+Load Average: 3.17, 3.08, 3.06
+---------------------------------------------------------------------------------------------
+Benchmark                                   Time             CPU   Iterations UserCounters...
+---------------------------------------------------------------------------------------------
+KernelLess/2048/0                         577 ns          576 ns       120961 items_per_second=3.55517G/s scalar
+KernelLess/2048/0                         582 ns          581 ns       120961 items_per_second=3.52668G/s scalar
+KernelLess/2048/0                         581 ns          579 ns       120961 items_per_second=3.53443G/s scalar
+KernelLess/2048/0_mean                    580 ns          579 ns            3 items_per_second=3.53876G/s scalar
+KernelLess/2048/0_median                  581 ns          579 ns            3 items_per_second=3.53443G/s scalar
+KernelLess/2048/0_stddev                 2.54 ns         2.41 ns            3 items_per_second=14.733M/s scalar
+KernelLess/2048/0_cv                     0.44 %          0.42 %             3 items_per_second=0.42% scalar
+KernelLess/2048/1                         580 ns          579 ns       120399 items_per_second=3.53531G/s neon
+KernelLess/2048/1                         582 ns          582 ns       120399 items_per_second=3.52042G/s neon
+KernelLess/2048/1                         592 ns          588 ns       120399 items_per_second=3.48214G/s neon
+KernelLess/2048/1_mean                    585 ns          583 ns            3 items_per_second=3.51262G/s neon
+KernelLess/2048/1_median                  582 ns          582 ns            3 items_per_second=3.52042G/s neon
+KernelLess/2048/1_stddev                 6.70 ns         4.57 ns            3 items_per_second=27.4293M/s neon
+KernelLess/2048/1_cv                     1.15 %          0.78 %             3 items_per_second=0.78% neon
+KernelLess/262144/0                     80804 ns        79613 ns          886 items_per_second=3.29273G/s scalar
+KernelLess/262144/0                     80058 ns        78849 ns          886 items_per_second=3.32464G/s scalar
+KernelLess/262144/0                     77029 ns        76253 ns          886 items_per_second=3.43783G/s scalar
+KernelLess/262144/0_mean                79297 ns        78238 ns            3 items_per_second=3.35173G/s scalar
+KernelLess/262144/0_median              80058 ns        78849 ns            3 items_per_second=3.32464G/s scalar
+KernelLess/262144/0_stddev               1999 ns         1761 ns            3 items_per_second=76.2459M/s scalar
+KernelLess/262144/0_cv                   2.52 %          2.25 %             3 items_per_second=2.27% scalar
+KernelLess/262144/1                     75391 ns        74945 ns          929 items_per_second=3.49781G/s neon
+KernelLess/262144/1                     75393 ns        75025 ns          929 items_per_second=3.4941G/s neon
+KernelLess/262144/1                     75262 ns        74940 ns          929 items_per_second=3.49806G/s neon
+KernelLess/262144/1_mean                75349 ns        74970 ns            3 items_per_second=3.49666G/s neon
+KernelLess/262144/1_median              75391 ns        74945 ns            3 items_per_second=3.49781G/s neon
+KernelLess/262144/1_stddev               75.4 ns         47.6 ns            3 items_per_second=2.22019M/s neon
+KernelLess/262144/1_cv                   0.10 %          0.06 %             3 items_per_second=0.06% neon
+KernelAdd/2048/0                          580 ns          579 ns       110935 items_per_second=3.53457G/s scalar
+KernelAdd/2048/0                          575 ns          574 ns       110935 items_per_second=3.56737G/s scalar
+KernelAdd/2048/0                          578 ns          577 ns       110935 items_per_second=3.54798G/s scalar
+KernelAdd/2048/0_mean                     578 ns          577 ns            3 items_per_second=3.54997G/s scalar
+KernelAdd/2048/0_median                   578 ns          577 ns            3 items_per_second=3.54798G/s scalar
+KernelAdd/2048/0_stddev                  2.84 ns         2.68 ns            3 items_per_second=16.4904M/s scalar
+KernelAdd/2048/0_cv                      0.49 %          0.46 %             3 items_per_second=0.46% scalar
+KernelAdd/2048/1                          323 ns          323 ns       214737 items_per_second=6.33791G/s neon
+KernelAdd/2048/1                          310 ns          310 ns       214737 items_per_second=6.59758G/s neon
+KernelAdd/2048/1                          304 ns          303 ns       214737 items_per_second=6.75164G/s neon
+KernelAdd/2048/1_mean                     312 ns          312 ns            3 items_per_second=6.56238G/s neon
+KernelAdd/2048/1_median                   310 ns          310 ns            3 items_per_second=6.59758G/s neon
+KernelAdd/2048/1_stddev                  10.0 ns         10.0 ns            3 items_per_second=209.097M/s neon
+KernelAdd/2048/1_cv                      3.21 %          3.21 %             3 items_per_second=3.19% neon
+KernelAdd/262144/0                      78620 ns        78340 ns          916 items_per_second=3.34625G/s scalar
+KernelAdd/262144/0                      76319 ns        76293 ns          916 items_per_second=3.43604G/s scalar
+KernelAdd/262144/0                      75326 ns        75297 ns          916 items_per_second=3.48147G/s scalar
+KernelAdd/262144/0_mean                 76755 ns        76643 ns            3 items_per_second=3.42125G/s scalar
+KernelAdd/262144/0_median               76319 ns        76293 ns            3 items_per_second=3.43604G/s scalar
+KernelAdd/262144/0_stddev                1690 ns         1551 ns            3 items_per_second=68.8086M/s scalar
+KernelAdd/262144/0_cv                    2.20 %          2.02 %             3 items_per_second=2.01% scalar
+KernelAdd/262144/1                      59122 ns        59122 ns         1171 items_per_second=4.43394G/s neon
+KernelAdd/262144/1                      58461 ns        58449 ns         1171 items_per_second=4.48499G/s neon
+KernelAdd/262144/1                      59534 ns        59528 ns         1171 items_per_second=4.40373G/s neon
+KernelAdd/262144/1_mean                 59039 ns        59033 ns            3 items_per_second=4.44089G/s neon
+KernelAdd/262144/1_median               59122 ns        59122 ns            3 items_per_second=4.43394G/s neon
+KernelAdd/262144/1_stddev                 541 ns          545 ns            3 items_per_second=41.0738M/s neon
+KernelAdd/262144/1_cv                    0.92 %          0.92 %             3 items_per_second=0.92% neon
+FilterScan/262144/2048/1/1            3442308 ns      3440800 ns           20 input_buffer_bytes=4.25984M items_per_second=76.1869M/s operator_buffer_bytes=68.736k output_rows=2.591k process_peak_rss_bytes=23.6749M neon
+FilterScan/262144/2048/1/1            3457079 ns      3456300 ns           20 input_buffer_bytes=4.25984M items_per_second=75.8453M/s operator_buffer_bytes=68.736k output_rows=2.591k process_peak_rss_bytes=23.6913M neon
+FilterScan/262144/2048/1/1            3425996 ns      3425900 ns           20 input_buffer_bytes=4.25984M items_per_second=76.5183M/s operator_buffer_bytes=68.736k output_rows=2.591k process_peak_rss_bytes=23.7076M neon
+FilterScan/262144/2048/1/1_mean       3441794 ns      3441000 ns            3 input_buffer_bytes=4.25984M items_per_second=76.1835M/s operator_buffer_bytes=68.736k output_rows=2.591k process_peak_rss_bytes=23.6913M neon
+FilterScan/262144/2048/1/1_median     3442308 ns      3440800 ns            3 input_buffer_bytes=4.25984M items_per_second=76.1869M/s operator_buffer_bytes=68.736k output_rows=2.591k process_peak_rss_bytes=23.6913M neon
+FilterScan/262144/2048/1/1_stddev       15548 ns        15201 ns            3 input_buffer_bytes=0 items_per_second=336.523k/s operator_buffer_bytes=0 output_rows=0 process_peak_rss_bytes=16.384k neon
+FilterScan/262144/2048/1/1_cv            0.45 %          0.44 %             3 input_buffer_bytes=0.00% items_per_second=0.44% operator_buffer_bytes=0.00% output_rows=0.00% process_peak_rss_bytes=0.07% neon
+FilterScan/262144/2048/50/1           4250050 ns      4248687 ns           16 input_buffer_bytes=4.25984M items_per_second=61.7M/s operator_buffer_bytes=76.8k output_rows=131.263k process_peak_rss_bytes=23.8223M neon
+FilterScan/262144/2048/50/1           4189630 ns      4188687 ns           16 input_buffer_bytes=4.25984M items_per_second=62.5838M/s operator_buffer_bytes=76.8k output_rows=131.263k process_peak_rss_bytes=23.8223M neon
+FilterScan/262144/2048/50/1           4225805 ns      4224563 ns           16 input_buffer_bytes=4.25984M items_per_second=62.0523M/s operator_buffer_bytes=76.8k output_rows=131.263k process_peak_rss_bytes=23.9043M neon
+FilterScan/262144/2048/50/1_mean      4221828 ns      4220646 ns            3 input_buffer_bytes=4.25984M items_per_second=62.112M/s operator_buffer_bytes=76.8k output_rows=131.263k process_peak_rss_bytes=23.8496M neon
+FilterScan/262144/2048/50/1_median    4225805 ns      4224563 ns            3 input_buffer_bytes=4.25984M items_per_second=62.0523M/s operator_buffer_bytes=76.8k output_rows=131.263k process_peak_rss_bytes=23.8223M neon
+FilterScan/262144/2048/50/1_stddev      30405 ns        30191 ns            3 input_buffer_bytes=0 items_per_second=444.919k/s operator_buffer_bytes=0 output_rows=0 process_peak_rss_bytes=47.2965k neon
+FilterScan/262144/2048/50/1_cv           0.72 %          0.72 %             3 input_buffer_bytes=0.00% items_per_second=0.72% operator_buffer_bytes=0.00% output_rows=0.00% process_peak_rss_bytes=0.20% neon
+FilterScan/262144/2048/99/1           3737065 ns      3737111 ns           18 input_buffer_bytes=4.25984M items_per_second=70.1462M/s operator_buffer_bytes=76.8k output_rows=259.542k process_peak_rss_bytes=23.937M neon
+FilterScan/262144/2048/99/1           3749840 ns      3749111 ns           18 input_buffer_bytes=4.25984M items_per_second=69.9216M/s operator_buffer_bytes=76.8k output_rows=259.542k process_peak_rss_bytes=23.937M neon
+FilterScan/262144/2048/99/1           3739130 ns      3739167 ns           18 input_buffer_bytes=4.25984M items_per_second=70.1076M/s operator_buffer_bytes=76.8k output_rows=259.542k process_peak_rss_bytes=23.937M neon
+FilterScan/262144/2048/99/1_mean      3742012 ns      3741796 ns            3 input_buffer_bytes=4.25984M items_per_second=70.0585M/s operator_buffer_bytes=76.8k output_rows=259.542k process_peak_rss_bytes=23.937M neon
+FilterScan/262144/2048/99/1_median    3739130 ns      3739167 ns            3 input_buffer_bytes=4.25984M items_per_second=70.1076M/s operator_buffer_bytes=76.8k output_rows=259.542k process_peak_rss_bytes=23.937M neon
+FilterScan/262144/2048/99/1_stddev       6858 ns         6418 ns            3 input_buffer_bytes=0 items_per_second=120.054k/s operator_buffer_bytes=0 output_rows=0 process_peak_rss_bytes=0 neon
+FilterScan/262144/2048/99/1_cv           0.18 %          0.17 %             3 input_buffer_bytes=0.00% items_per_second=0.17% operator_buffer_bytes=0.00% output_rows=0.00% process_peak_rss_bytes=0.00% neon
+FilterScan/262144/2048/50/0           4250292 ns      4250059 ns           17 input_buffer_bytes=4.25984M items_per_second=61.6801M/s operator_buffer_bytes=76.8k output_rows=131.263k process_peak_rss_bytes=23.9534M scalar
+FilterScan/262144/2048/50/0           4215924 ns      4216118 ns           17 input_buffer_bytes=4.25984M items_per_second=62.1766M/s operator_buffer_bytes=76.8k output_rows=131.263k process_peak_rss_bytes=23.9534M scalar
+FilterScan/262144/2048/50/0           4209078 ns      4209118 ns           17 input_buffer_bytes=4.25984M items_per_second=62.28M/s operator_buffer_bytes=76.8k output_rows=131.263k process_peak_rss_bytes=23.9534M scalar
+FilterScan/262144/2048/50/0_mean      4225098 ns      4225098 ns            3 input_buffer_bytes=4.25984M items_per_second=62.0456M/s operator_buffer_bytes=76.8k output_rows=131.263k process_peak_rss_bytes=23.9534M scalar
+FilterScan/262144/2048/50/0_median    4215924 ns      4216118 ns            3 input_buffer_bytes=4.25984M items_per_second=62.1766M/s operator_buffer_bytes=76.8k output_rows=131.263k process_peak_rss_bytes=23.9534M scalar
+FilterScan/262144/2048/50/0_stddev      22085 ns        21898 ns            3 input_buffer_bytes=0 items_per_second=320.725k/s operator_buffer_bytes=0 output_rows=0 process_peak_rss_bytes=0 scalar
+FilterScan/262144/2048/50/0_cv           0.52 %          0.52 %             3 input_buffer_bytes=0.00% items_per_second=0.52% operator_buffer_bytes=0.00% output_rows=0.00% process_peak_rss_bytes=0.00% scalar
+Analytical/262144/6/0                20814181 ns     20750667 ns            3 input_buffer_bytes=15.0957M items_per_second=12.633M/s operator_buffer_bytes=373.048k output_rows=1 process_peak_rss_bytes=36.4216M
+Analytical/262144/6/0                20865514 ns     20828333 ns            3 input_buffer_bytes=15.0957M items_per_second=12.5859M/s operator_buffer_bytes=373.048k output_rows=1 process_peak_rss_bytes=36.438M
+Analytical/262144/6/0                20390805 ns     20387000 ns            3 input_buffer_bytes=15.0957M items_per_second=12.8584M/s operator_buffer_bytes=373.048k output_rows=1 process_peak_rss_bytes=36.4872M
+Analytical/262144/6/0_mean           20690167 ns     20655333 ns            3 input_buffer_bytes=15.0957M items_per_second=12.6925M/s operator_buffer_bytes=373.048k output_rows=1 process_peak_rss_bytes=36.4489M
+Analytical/262144/6/0_median         20814181 ns     20750667 ns            3 input_buffer_bytes=15.0957M items_per_second=12.633M/s operator_buffer_bytes=373.048k output_rows=1 process_peak_rss_bytes=36.438M
+Analytical/262144/6/0_stddev           260522 ns       235606 ns            3 input_buffer_bytes=0 items_per_second=145.622k/s operator_buffer_bytes=0 output_rows=0 process_peak_rss_bytes=34.106k
+Analytical/262144/6/0_cv                 1.26 %          1.14 %             3 input_buffer_bytes=0.00% items_per_second=1.15% operator_buffer_bytes=0.00% output_rows=0.00% process_peak_rss_bytes=0.09%
+Analytical/262144/6/1                11149736 ns     11149667 ns            6 input_buffer_bytes=15.0957M items_per_second=23.5114M/s operator_buffer_bytes=337.968k output_rows=1 process_peak_rss_bytes=36.5527M
+Analytical/262144/6/1                11203813 ns     11203500 ns            6 input_buffer_bytes=15.0957M items_per_second=23.3984M/s operator_buffer_bytes=337.968k output_rows=1 process_peak_rss_bytes=36.5527M
+Analytical/262144/6/1                11141201 ns     11139167 ns            6 input_buffer_bytes=15.0957M items_per_second=23.5335M/s operator_buffer_bytes=337.968k output_rows=1 process_peak_rss_bytes=36.5527M
+Analytical/262144/6/1_mean           11164917 ns     11164111 ns            3 input_buffer_bytes=15.0957M items_per_second=23.4811M/s operator_buffer_bytes=337.968k output_rows=1 process_peak_rss_bytes=36.5527M
+Analytical/262144/6/1_median         11149736 ns     11149667 ns            3 input_buffer_bytes=15.0957M items_per_second=23.5114M/s operator_buffer_bytes=337.968k output_rows=1 process_peak_rss_bytes=36.5527M
+Analytical/262144/6/1_stddev            33954 ns        34513 ns            3 input_buffer_bytes=0 items_per_second=72.475k/s operator_buffer_bytes=0 output_rows=0 process_peak_rss_bytes=0
+Analytical/262144/6/1_cv                 0.30 %          0.31 %             3 input_buffer_bytes=0.00% items_per_second=0.31% operator_buffer_bytes=0.00% output_rows=0.00% process_peak_rss_bytes=0.00%
