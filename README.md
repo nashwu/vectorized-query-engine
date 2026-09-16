@@ -178,6 +178,45 @@ semantic barriers, pruning, SIMD tails, and analytical plans. Tests use checks
 that remain active in Release builds. Sanitizers instrument the engine and tests;
 prebuilt third-party shared libraries are not sanitizer-instrumented.
 
+## Benchmark methodology and measured results
+
+The optional Google Benchmark suite measures query CPU/wall latency, input
+rows/sec, input and retained operator buffers, and process peak RSS. It sweeps
+batch sizes (including batch size 1 as the per-tuple iterator baseline), filter
+selectivity, input size, group cardinality/skew, join ratios/duplicate patterns,
+scalar/SIMD kernels, and optimized/unoptimized analytical plans. Data generation
+and planning are outside timed loops; operator construction, execution and
+destruction are inside. There are no cross-engine performance claims.
+
+Raw measurements, environment, result tables and the measured scan optimization
+are in [benchmarks/results](benchmarks/results) and
+[the performance report](docs/performance.md). Results are machine- and workload-
+specific. The default batch size is configurable, not asserted to be universally
+optimal.
+
+On the local Apple M3 Pro, Release, three repetitions per case, median CPU times
+for 262,144 rows were:
+
+| Measured case | Time | Input throughput |
+|---|---:|---:|
+| Filter, batch 1, approximately 50% selectivity | 15.30 ms | 17.13 M rows/s |
+| Filter, batch 2048, approximately 50% selectivity | 2.11 ms | 124.12 M rows/s |
+| Grouped COUNT/SUM, 64-key domain | 4.10 ms | 63.90 M rows/s |
+| Optimized synthetic Q6 | 6.57 ms | 39.89 M rows/s |
+
+These are short warm runs of this engine, not comparisons to other databases.
+The report includes cases with little or no improvement and explains the
+throughput and memory denominators.
+
+```sh
+./build-release/vqe_bench --benchmark_min_time=0.05s \
+  --benchmark_repetitions=3 --benchmark_out=results.json \
+  --benchmark_out_format=json
+python3 scripts/benchmark_report.py results.json
+```
+
+For Linux hardware counters and interpretation, see the performance report.
+
 ## Known limitations and next experiments
 
 Single-threaded, in-memory execution; no SQL parser, transactions, persistence

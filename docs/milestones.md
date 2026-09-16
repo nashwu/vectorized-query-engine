@@ -22,3 +22,15 @@ undefined behavior. NULLs follow SQL three-valued boolean logic. Blocking
 operators are in-memory and report their retained allocations; spilling is
 future work.
 
+## Delivered and validated
+
+All five stages are implemented. Core, blocking operators and planning were
+compiled and tested before Parquet integration. Arrow 21.0.0 and Google
+Benchmark 1.9.4 were downloaded only after explicit approval and stored under
+ignored `.deps/`. Parquet tests use actual generated files. NEON and scalar
+kernels were differentially tested before performance measurement; AVX2 remains
+unexecuted on this ARM64 host. The measured scan-copy optimization has before/
+after data and a reversible patch in `benchmarks/results/`.
+
+There are no commits, remotes, pull requests or published artifacts. Future
+experiments and limits are recorded in the README and architecture document.
