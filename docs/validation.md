@@ -52,5 +52,7 @@ with only the saved scan-copy patch reversed for the baseline. Build/test jobs
 were completed before either measured process began. RSS and buffer-accounting
 limitations are stated in the performance report.
 
-No commits, remotes, pushes, pull requests, releases, code uploads or resume-file
-edits were made. Only explicitly approved dependency downloads used the network.
+During the September 16 validation, no commits, remotes, pushes, pull requests,
+releases, code uploads or resume-file edits were made. Only explicitly approved
+dependency downloads used the network. The later local history reconstruction
+is documented in [history reconstruction](history-reconstruction.md).

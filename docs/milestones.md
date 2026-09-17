@@ -32,5 +32,7 @@ kernels were differentially tested before performance measurement; AVX2 remains
 unexecuted on this ARM64 host. The measured scan-copy optimization has before/
 after data and a reversible patch in `benchmarks/results/`.
 
-There are no commits, remotes, pull requests or published artifacts. Future
-experiments and limits are recorded in the README and architecture document.
+At the end of the September 16 validation, there were no commits, remotes,
+pull requests or published artifacts. Local history was reconstructed on
+September 17; see [history reconstruction](history-reconstruction.md).
+Future experiments and limits are recorded in the README and architecture document.

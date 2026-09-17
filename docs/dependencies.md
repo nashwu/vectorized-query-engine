@@ -33,5 +33,6 @@ cmake --build .deps/benchmark-build -j
 cmake --install .deps/benchmark-build
 ```
 
-Core builds do not need any of these steps. The project has no remote, commit,
-release, package upload or publication workflow.
+Core builds do not need any of these steps. Local commit history was
+[reconstructed](history-reconstruction.md) on September 17, 2026. The project
+has no remote, release, package upload or publication workflow.

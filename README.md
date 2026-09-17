@@ -230,3 +230,9 @@ Useful next experiments are x86 execution validation, SIMD mask packing,
 late materialization and Arrow-backed views, aggregate specialization, bounded
 Top-N, memory budgets and spill partitions, parallel pipelines, and broader
 Parquet logical types. These are future work, not implemented features.
+
+## Development history
+
+The August 1–September 17, 2026 commit sequence was reconstructed on
+September 17 from the existing project. Dates are estimated allocations of the
+reported work period; see [history reconstruction](docs/history-reconstruction.md).
